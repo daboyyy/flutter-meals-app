@@ -1,61 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:meals_app/models/meal.dart';
-import 'package:meals_app/widgets/meal_item.dart';
+import 'package:meals_app/widgets/main_drawer.dart';
 
-import '../dummy_data.dart';
+class FilterScreen extends StatefulWidget {
+  static const routeName = '/filters{';
+  final Map<String, bool> currentFilters;
+  final Function(Map<String, bool>) saveFilters;
 
-class CategoryMealsScreen extends StatefulWidget {
-  static const routeName = '/category-meals';
+  FilterScreen(this.currentFilters, this.saveFilters);
 
   @override
-  _CategoryMealsScreenState createState() => _CategoryMealsScreenState();
+  _FiltersScreenState createState() => _FiltersScreenState();
 }
 
-class _CategoryMealsScreenState extends State<CategoryMealsScreen> {
-  String? categoryTitle;
-  List<Meal>? displayedMeals;
-  bool _loadedInitData = false;
+class _FiltersScreenState extends State<FilterScreen> {
+  bool _glutenFree = false;
+  bool _vegetarian = false;
+  bool _vegan = false;
+  bool _lactoseFree = false;
 
   @override
-  void didChangeDependencies() {
-    if (!_loadedInitData) {
-      final routeArgs =
-          ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-      categoryTitle = routeArgs['title'];
-      final categoryId = routeArgs['id'];
-      displayedMeals = DUMMY_MEALS
-          .where((meal) => meal.categories.contains(categoryId))
-          .toList();
-      _loadedInitData = true;
-    }
-    super.didChangeDependencies();
+  initState() {
+    _glutenFree = widget.currentFilters['gluten']!;
+    _lactoseFree = widget.currentFilters['lactose']!;
+    _vegan = widget.currentFilters['vegan']!;
+    _vegetarian = widget.currentFilters['vegetarian']!;
+    super.initState();
   }
 
-  void _removeMeal(String mealId) {
-    setState(() {
-      displayedMeals!.removeWhere((meal) => meal.id == mealId);
-    });
+  Widget _buildSwitchListTile(String title, String description,
+      bool currentValue, Function(bool?) updateValue) {
+    return SwitchListTile(
+      title: Text(title),
+      subtitle: Text(
+        description,
+      ),
+      value: currentValue,
+      onChanged: updateValue,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(categoryTitle as String),
+        title: const Text('Your Filters'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              final selectedFilters = {
+                'gluten': _glutenFree,
+                'lactose': _lactoseFree,
+                'vegan': _vegan,
+                'vegetarian': _vegetarian,
+              };
+              widget.saveFilters(selectedFilters);
+            },
+            icon: const Icon(Icons.save),
+          )
+        ],
       ),
-      body: ListView.builder(
-        itemBuilder: (ctx, index) {
-          return MealItem(
-            id: displayedMeals![index].id,
-            title: displayedMeals![index].title,
-            imageUrl: displayedMeals![index].imageUrl,
-            duration: displayedMeals![index].duration,
-            complexity: displayedMeals![index].complexity,
-            affordability: displayedMeals![index].affordability,
-            removeItem: _removeMeal,
-          );
-        },
-        itemCount: displayedMeals!.length,
+      drawer: MainDrawer(),
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              'Adjust your meal selection',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: [
+                _buildSwitchListTile(
+                  'Gluten-free',
+                  'Only include gluten-free meals.',
+                  _glutenFree,
+                  (val) {
+                    setState(
+                      () {
+                        _glutenFree = val as bool;
+                      },
+                    );
+                  },
+                ),
+                _buildSwitchListTile(
+                  'Lactose-free',
+                  'Only include lactose-free meals.',
+                  _lactoseFree,
+                  (val) {
+                    setState(
+                      () {
+                        _lactoseFree = val as bool;
+                      },
+                    );
+                  },
+                ),
+                _buildSwitchListTile(
+                  'Vegetarian',
+                  'Only include vegetarian meals.',
+                  _vegetarian,
+                  (val) {
+                    setState(
+                      () {
+                        _vegetarian = val as bool;
+                      },
+                    );
+                  },
+                ),
+                _buildSwitchListTile(
+                  'Vegan',
+                  'Only include vegan meals.',
+                  _vegan,
+                  (val) {
+                    setState(
+                      () {
+                        _vegan = val as bool;
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
